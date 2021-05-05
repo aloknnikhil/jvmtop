@@ -6,144 +6,126 @@
 
     <groupId>com.jvmtop</groupId>
     <artifactId>jvmtop</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
 
-    <profiles>
-        <profile>
-            <id>java8</id>
-            <properties>
-                <!-- change it to point to your tools.jar from your JDK -->
-                <toolsjar>${java.home}/../lib/tools.jar</toolsjar>
-                <jdk.version>1.6</jdk.version>
-            </properties>
+    <dependencies>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>4.6.1</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.7.0</version>
-                        <configuration>
-                            <source>${jdk.version}</source>
-                            <target>${jdk.version}</target>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-
-        </profile>
-
-        <profile>
-            <id>java11</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-
-            <properties>
-                <jdk.version>11</jdk.version>
-            </properties>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.7.0</version>
-                        <configuration>
-                            <source>${jdk.version}</source>
-                            <target>${jdk.version}</target>
-                            <compilerArgs>
-                                <arg>--add-exports</arg>
-                                <arg>java.rmi/sun.rmi.transport=ALL-UNNAMED</arg>
-                                <arg>--add-exports</arg>
-                                <arg>java.rmi/sun.rmi.server=ALL-UNNAMED</arg>
-                                <arg>--add-exports</arg>
-                                <arg>jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED</arg>
-                                <arg>--add-exports</arg>
-                                <arg>jdk.management.agent/jdk.internal.agent=ALL-UNNAMED</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </plugin>
-
-                    <!-- maven Java 11 Multi Release jar support -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jar-plugin</artifactId>
-                        <version>3.0.2</version>
-                        <configuration>
-                            <archive>
-                                <manifestEntries>
-                                    <Specification-Title>${project.artifactId}</Specification-Title>
-                                    <Implementation-Title>${project.artifactId}</Implementation-Title>
-                                    <Implementation-Version>${project.version}</Implementation-Version>
-                                    <Multi-Release>true</Multi-Release>
-                                </manifestEntries>
-                            </archive>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.8</version>
-                        <executions>
-                            <execution>
-                                <id>compile-java11</id>
-                                <phase>compile</phase>
-                                <configuration>
-                                    <target>
-                                        <mkdir dir="${java11.build.outputDirectory}" />
-                                        <javac source="11" target="11" srcdir="${java11.sourceDirectory}" destdir="${java11.build.outputDirectory}"
-                                               classpath="${project.build.outputDirectory}" includeantruntime="false">
-                                            <compilerarg value="--add-modules" />
-                                            <compilerarg value="jdk.management,jdk.management.agent,jdk.attach,jdk.internal.jvmstat,java.rmi,java.management.rmi,java.desktop,java.sql" />
-                                            <compilerarg value="--add-exports=java.rmi/sun.rmi.server=ALL-UNNAMED" />
-                                            <compilerarg value="--add-exports=java.rmi/sun.rmi.transport=ALL-UNNAMED" />
-                                            <compilerarg value="--add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED" />
-                                            <compilerarg value="--add-exports=jdk.management.agent/jdk.internal.agent=ALL-UNNAMED" />
-                                        </javac>
-                                    </target>
-                                </configuration>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>3.0.2</version>
-                        <executions>
-                            <execution>
-                                <id>copy-resources</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.outputDirectory}/META-INF/versions/11</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${java11.build.outputDirectory}</directory>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-                <java11.build.outputDirectory>${project.build.directory}/generated-resources/</java11.build.outputDirectory>
-                <java11.sourceDirectory>src/main/java</java11.sourceDirectory>
-	</properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+        <jdk.version>11</jdk.version>
+    </properties>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                    <compilerArgs>
+                        <arg>--add-exports</arg>
+                        <arg>java.rmi/sun.rmi.transport=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>java.rmi/sun.rmi.server=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.management.agent/jdk.internal.agent=ALL-UNNAMED</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <!-- maven Java 11 Multi Release jar support -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.jvmtop.JvmTop</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                        </manifest>
+                        <manifestEntries>
+                            <Specification-Title>${project.artifactId}</Specification-Title>
+                            <Implementation-Title>${project.artifactId}</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Multi-Release>true</Multi-Release>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <id>compile-java11</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.outputDirectory}" />
+                                <javac source="11" target="11" srcdir="${project.build.sourceDirectory}" destdir="${project.build.outputDirectory}"
+                                       classpath="${project.build.outputDirectory}" includeantruntime="false">
+                                    <compilerarg value="--add-modules" />
+                                    <compilerarg value="jdk.management,jdk.management.agent,jdk.attach,jdk.internal.jvmstat,java.rmi,java.management.rmi,java.desktop,java.sql" />
+                                    <compilerarg value="--add-exports=java.rmi/sun.rmi.server=ALL-UNNAMED" />
+                                    <compilerarg value="--add-exports=java.rmi/sun.rmi.transport=ALL-UNNAMED" />
+                                    <compilerarg value="--add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED" />
+                                    <compilerarg value="--add-exports=jdk.management.agent/jdk.internal.agent=ALL-UNNAMED" />
+                                </javac>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/META-INF/versions/11</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${build.outputDirectory}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -166,6 +148,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>

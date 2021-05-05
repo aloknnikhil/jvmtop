@@ -1,16 +1,16 @@
 package com.jvmtop.profiler;
 
-import com.jvmtop.Config;
+import com.jvmtop.JvmTop;
 
 import java.io.PrintStream;
 import java.util.List;
 
 public class JsonVisualizer implements Visualizer {
-    private final Config config;
+    private final JvmTop.Config config;
     private final long processTotalTime;
     private int parentId = 0;
 
-    public JsonVisualizer(Config config, long processTotalTime) {
+    public JsonVisualizer(JvmTop.Config config, long processTotalTime) {
         this.config = config;
         this.processTotalTime = processTotalTime;
     }
@@ -57,7 +57,7 @@ public class JsonVisualizer implements Visualizer {
     }
 
     private static void printInternal(CalltreeNode node, long parentTotalTime, long threadTotalTime, long processTotalTime,
-                                      PrintStream out, int depth, Config config, boolean skipped, String parent, int idNumber) {
+                                      PrintStream out, int depth, JvmTop.Config config, boolean skipped, String parent, int idNumber) {
         double percentFull = node.getTotalTime() * 100.0 / parentTotalTime;
         double percentSelf = node.getSelf() * 100.0 / parentTotalTime;
 

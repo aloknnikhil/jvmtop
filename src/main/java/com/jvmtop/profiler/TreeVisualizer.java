@@ -1,6 +1,6 @@
 package com.jvmtop.profiler;
 
-import com.jvmtop.Config;
+import com.jvmtop.JvmTop;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -11,10 +11,10 @@ public class TreeVisualizer implements Visualizer {
     private static final int TOTAL_FORMAT_LEN = 30; // [ (99.0% processTotalTime | 88.0% process)]
     private static final String BRANCH = " \\_ ";
 
-    private final Config config;
+    private final JvmTop.Config config;
     private final long processTotalTime;
 
-    public TreeVisualizer(Config config, long processTotalTime) {
+    public TreeVisualizer(JvmTop.Config config, long processTotalTime) {
         this.config = config;
         this.processTotalTime = processTotalTime;
     }
@@ -34,7 +34,7 @@ public class TreeVisualizer implements Visualizer {
         printInternal(node, node.getTotalTime(), node.getTotalTime(), processTotalTime, out, 0, this.config, false);
     }
 
-    private static void printInternal(CalltreeNode node, long parentTotalTime, long threadTotalTime, long processTotalTime, PrintStream out, int depth, Config config, boolean skipped) {
+    private static void printInternal(CalltreeNode node, long parentTotalTime, long threadTotalTime, long processTotalTime, PrintStream out, int depth, JvmTop.Config config, boolean skipped) {
         if (depth > config.maxDepth) return;
         double percentFull = node.getTotalTime() * 100.0 / parentTotalTime;
         double percentSelf = node.getSelf() * 100.0 / parentTotalTime;

@@ -1,4 +1,8 @@
 /*
+ * Copyright (C) 2021 by Alok Nandan Nikhil. All rights reserved.
+ */
+
+/*
  * jvmtop - java monitoring for the command-line
  * <p>
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -20,7 +24,7 @@
  */
 package com.jvmtop.view;
 
-import com.jvmtop.Config;
+import com.jvmtop.JvmTop;
 import com.jvmtop.monitor.VMInfo;
 import com.jvmtop.monitor.VMInfoState;
 import com.jvmtop.openjdk.tools.LocalVirtualMachine;
@@ -48,9 +52,9 @@ public class VMProfileView extends AbstractConsoleView {
 
     private final CPUSampler cpuSampler_;
     private final VMInfo vmInfo_;
-    private final Config config_;
+    private final JvmTop.Config config_;
 
-    public VMProfileView(int vmid, Config config) throws IOException, AttachNotSupportedException {
+    public VMProfileView(int vmid, JvmTop.Config config) throws IOException, AttachNotSupportedException {
         super(config.width);
         LocalVirtualMachine localVirtualMachine = LocalVirtualMachine
                 .getLocalVirtualMachine(vmid);

@@ -1,4 +1,8 @@
 /*
+ * Copyright (C) 2021 by Alok Nandan Nikhil. All rights reserved.
+ */
+
+/*
  * jvmtop - java monitoring for the command-line
  * <p>
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -20,20 +24,24 @@
  */
 package com.jvmtop;
 
-import com.jvmtop.cli.CommandLine;
-import com.jvmtop.cli.CommandLine.Command;
 import com.jvmtop.view.ConsoleView;
 import com.jvmtop.view.VMDetailView;
 import com.jvmtop.view.VMOverviewView;
 import com.jvmtop.view.VMProfileView;
+import picocli.CommandLine;
 
 import java.io.BufferedOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -47,12 +55,10 @@ import java.util.logging.Logger;
  * - prints header
  * - main "iteration loop"
  *
- * TODO: refactor to split these tasks
- *
- * @author paru
+ * @author paru / aloknnikhil
  *
  */
-public class JvmTop {
+public class JvmTop implements Callable<Void> {
     private final static String CLEAR_TERMINAL_ANSI_CMD = new String(new byte[]{
             (byte) 0x1b, (byte) 0x5b, (byte) 0x32, (byte) 0x4a, (byte) 0x1b,
             (byte) 0x5b, (byte) 0x48});
@@ -66,63 +72,29 @@ public class JvmTop {
         localOSBean_ = ManagementFactory.getOperatingSystemMXBean();
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String... args) {
         Locale.setDefault(Locale.US);
-
         logger = Logger.getLogger("jvmtop");
 
         JvmTop jvmTop = new JvmTop();
         CommandLine commandLine = new CommandLine(jvmTop.config);
-        commandLine.parse(args);
+        CommandLine.ParseResult parseResult = commandLine.parseArgs(args);
 
         if (commandLine.isUsageHelpRequested()) {
-            commandLine.usage(System.err);
-            System.exit(0);
+            commandLine.usage(commandLine.getOut());
+            System.exit(commandLine.getCommandSpec().exitCodeOnUsageHelp());
         } else if (commandLine.isVersionHelpRequested()) {
-            commandLine.printVersionHelp(System.err);
-            System.exit(0);
+            commandLine.printVersionHelp(commandLine.getOut());
+            System.exit(commandLine.getCommandSpec().exitCodeOnVersionHelp());
         }
 
-        jvmTop.start(jvmTop);
-    }
-
-    private void start(JvmTop jvmTop) throws Exception {
-        if (config.delay < 0.1d) {
-            throw new IllegalArgumentException("Delay cannot be set below 0.1");
+        try {
+            commandLine.setExecutionResult(jvmTop.call());
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+            System.exit(commandLine.getCommandSpec().exitCodeOnExecutionException());
         }
-
-        if (config.verbose) {
-            fineLogging();
-            logger.setLevel(Level.ALL);
-            logger.fine("Verbosity mode.");
-        }
-
-        if (config.pidParameter != null) {
-            // support for parameter w/o name
-            config.pid = config.pidParameter;
-        }
-
-        if (config.sysInfoOption) {
-            outputSystemProps();
-        } else {
-            if (config.pid == null) {
-                jvmTop.start(new VMOverviewView(config.width));
-            } else {
-                if (config.profileMode) {
-                    jvmTop.start(new VMProfileView(config.pid, config));
-                } else {
-                    VMDetailView vmDetailView = new VMDetailView(config.pid, config.width);
-                    vmDetailView.setDisplayedThreadLimit(config.threadLimitEnabled);
-                    if (config.threadlimit != null) {
-                        vmDetailView.setNumberOfDisplayedThreads(config.threadlimit);
-                    }
-                    if (config.threadNameWidth != null) {
-                        vmDetailView.setThreadNameDisplayWidth(config.threadNameWidth);
-                    }
-                    jvmTop.start(vmDetailView);
-                }
-            }
-        }
+        System.exit(commandLine.getCommandSpec().exitCodeOnSuccess());
     }
 
     private static void fineLogging() {
@@ -219,7 +191,7 @@ public class JvmTop {
      */
     private void printTopBar() {
         StringBuilder version = new StringBuilder();
-        for (String versionPart : Config.class.getAnnotation(Command.class).version()) {
+        for (String versionPart : Config.class.getAnnotation(CommandLine.Command.class).version()) {
             version.append(versionPart);
         }
         System.out.printf(" JvmTop %s - %8tT, %6s, %2d cpus, %15.15s", version,
@@ -246,5 +218,122 @@ public class JvmTop {
             }
         }
         return supportsSystemAverage_;
+    }
+
+    @Override
+    public Void call() throws Exception {
+        if (config.delay < 0.1d) {
+            throw new IllegalArgumentException("Delay cannot be set below 0.1");
+        }
+
+        if (config.verbose) {
+            fineLogging();
+            logger.setLevel(Level.ALL);
+            logger.fine("Verbosity mode.");
+        }
+
+        if (config.pidParameter != null) {
+            // support for parameter w/o name
+            config.pid = config.pidParameter;
+        }
+
+        if (config.sysInfoOption) {
+            outputSystemProps();
+        } else {
+            if (config.pid == null) {
+                start(new VMOverviewView(config.width));
+            } else {
+                if (config.profileMode) {
+                    start(new VMProfileView(config.pid, config));
+                } else {
+                    VMDetailView vmDetailView = new VMDetailView(config.pid, config.width);
+                    vmDetailView.setDisplayedThreadLimit(config.threadLimitEnabled);
+                    if (config.threadlimit != null) {
+                        vmDetailView.setNumberOfDisplayedThreads(config.threadlimit);
+                    }
+                    if (config.threadNameWidth != null) {
+                        vmDetailView.setThreadNameDisplayWidth(config.threadNameWidth);
+                    }
+                    start(vmDetailView);
+                }
+            }
+        }
+        return null;
+    }
+
+    @CommandLine.Command(mixinStandardHelpOptions = true, versionProvider = JvmTop.PropertiesVersionProvider.class)
+    public static class Config {
+        @CommandLine.Option(names = {"-i", "--sysinfo"}, description = "Outputs diagnostic information")
+        public boolean sysInfoOption = false;
+        @CommandLine.Option(names = {"-v", "--verbose"}, description = "Outputs verbose logs")
+        public boolean verbose = false;
+
+        @CommandLine.Parameters(index = "0", arity = "0..1", description = "PID to connect to, override parameter")
+        public Integer pidParameter = null;
+        @CommandLine.Option(names = {"-p", "--pid"}, description = "PID to connect to")
+        public Integer pid = null;
+
+        @CommandLine.Option(names = {"-w", "--width"}, description = "Width in columns for the console display")
+        public Integer width = 280;
+
+        @CommandLine.Option(names = {"-d", "--delay"}, description = "Delay between each output iteration")
+        public double delay = 1.0;
+
+        @CommandLine.Option(names = "--profile", description = "Start CPU profiling at the specified jvm")
+        public boolean profileMode = false;
+
+        @CommandLine.Option(names = {"-n", "--iteration"}, description = "jvmtop will exit after n output iterations")
+        public Integer iterations = -1;
+
+        @CommandLine.Option(names = "--threadlimit", description = "sets the number of displayed threads in detail mode")
+        public Integer threadlimit = Integer.MAX_VALUE;
+
+        @CommandLine.Option(names = "--disable-threadlimit", description = "displays all threads in detail mode")
+        public boolean threadLimitEnabled = true;
+
+        @CommandLine.Option(names = "--threadnamewidth", description = "sets displayed thread name length in detail mode (defaults to 30)")
+        public Integer threadNameWidth = null;
+
+        @CommandLine.Option(names = "--profileMinTotal", description = "Profiler minimum thread cost to be in output")
+        public Double minTotal = 5.0;
+        @CommandLine.Option(names = "--profileMinCost", description = "Profiler minimum function cost to be in output")
+        public Double minCost = 5.0;
+        @CommandLine.Option(names = "--profileMaxDepth", description = "Profiler maximum function depth in output")
+        public Integer maxDepth = 15;
+        @CommandLine.Option(names = "--profileCanSkip", description = "Profiler ability to skip intermediate functions with same cpu usage as their parent")
+        public boolean canSkip = false;
+        @CommandLine.Option(names = "--profilePrintTotal", description = "Profiler printing percent of total thread cpu")
+        public boolean printTotal = false;
+        @CommandLine.Option(names = "--profileRealTime", description = "Profiler uses real time instead of cpu time (usable for sleeps profiling)")
+        public boolean profileRealTime = false;
+        @CommandLine.Option(names = "--profileFileVisualize", description = "Profiler file to output result")
+        public String fileVisualize = null;
+        @CommandLine.Option(names = "--profileJsonVisualize", description = "Profiler file to output result (JSON format)")
+        public String jsonVisualize = null;
+        @CommandLine.Option(names = "--profileCachegrindVisualize", description = "Profiler file to output result (Cachegrind format)")
+        public String cachegrindVisualize = null;
+        @CommandLine.Option(names = "--profileFlameVisualize", description = "Profiler file to output result (Flame graph format)")
+        public String flameVisualize = null;
+        @CommandLine.Option(names = "--profileThreadIds", description = "Profiler thread ids to profile (id is #123 after thread name)", split = ",", type = Long.class)
+        public List<Long> profileThreadIds = new ArrayList<>();
+        @CommandLine.Option(names = "--profileThreadNames", description = "Profiler thread names to profile", split = ",")
+        public List<String> profileThreadNames = new ArrayList<>();
+
+        public Config() {
+        }
+    }
+
+    static class PropertiesVersionProvider implements CommandLine.IVersionProvider {
+        private static final String PROPERTIES_FILE = "project.properties";
+
+        @Override
+        public String[] getVersion() throws IOException {
+            final Properties properties = new Properties();
+            properties.load(this.getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE));
+            return new String[] {
+                    properties.getProperty("appName") + " version \"" + properties.getProperty("version") + "\"",
+                    "Built: " + properties.getProperty("buildTimestamp"),
+            };
+        }
     }
 }

@@ -25,4 +25,12 @@
             <destName>jvmtop.jar</destName>
         </file>
     </files>
+
+    <!-- packaging -->
+    <dependencySets>
+        <dependencySet>
+            <!-- jars -->
+            <outputDirectory>lib</outputDirectory>
+        </dependencySet>
+    </dependencySets>
 </assembly>

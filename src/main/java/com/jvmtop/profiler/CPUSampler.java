@@ -20,7 +20,7 @@
  */
 package com.jvmtop.profiler;
 
-import com.jvmtop.Config;
+import com.jvmtop.JvmTop;
 import com.jvmtop.monitor.VMInfo;
 import com.jvmtop.monitor.VMInfoState;
 
@@ -54,12 +54,12 @@ public class CPUSampler {
     private final ConcurrentMap<Long, Long> threadCPUPreviousMark = new ConcurrentHashMap<>();
     private final AtomicLong updateCount_ = new AtomicLong(0);
     private final VMInfo vmInfo_;
-    private final Config config_;
+    private final JvmTop.Config config_;
 
     /**
      * @param vmInfo
      */
-    public CPUSampler(VMInfo vmInfo, Config config) {
+    public CPUSampler(VMInfo vmInfo, JvmTop.Config config) {
         super();
         threadMxBean_ = vmInfo.getThreadMXBean();
         long beginCPUTime_ = vmInfo.getProxyClient().getProcessCpuTime();
@@ -68,7 +68,7 @@ public class CPUSampler {
         convertThreadNamesToIds(threadMxBean_, config_);
     }
 
-    private static void convertThreadNamesToIds(ThreadMXBean threadMxBean_, Config config_) {
+    private static void convertThreadNamesToIds(ThreadMXBean threadMxBean_, JvmTop.Config config_) {
         if (config_.profileThreadNames.size() == 0) return;
         List<Pattern> regexes = new ArrayList<>(config_.profileThreadNames.size());
         for (String tn : config_.profileThreadNames) {
