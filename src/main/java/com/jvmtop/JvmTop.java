@@ -233,7 +233,7 @@ public class JvmTop {
         } else {
             System.out.println();
         }
-        System.out.println(" https://github.com/nemaefar/jvmtop");
+        System.out.println(" https://github.com/aloknnikhil/jvmtop");
         System.out.println();
     }
 

@@ -7,7 +7,7 @@ import com.jvmtop.cli.CommandLine.Parameters;
 import java.util.ArrayList;
 import java.util.List;
 
-@Command(name = "JvmTop", description = "Java sampling command-line profiler", version = "1.0.2")
+@Command(name = "JvmTop", description = "Java sampling command-line profiler", version = "1.0.3")
 public class Config {
     @Option(names = {"-i", "--sysinfo"}, description = "Outputs diagnostic information")
     public boolean sysInfoOption = false;

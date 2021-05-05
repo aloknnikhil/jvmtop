@@ -6,13 +6,11 @@
 
     <groupId>com.jvmtop</groupId>
     <artifactId>jvmtop</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.0.3-SNAPSHOT</version>
 
     <profiles>
         <profile>
             <id>java8</id>
-
-
             <properties>
                 <!-- change it to point to your tools.jar from your JDK -->
                 <toolsjar>${java.home}/../lib/tools.jar</toolsjar>

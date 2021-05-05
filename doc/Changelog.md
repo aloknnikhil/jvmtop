@@ -1,3 +1,8 @@
+### 05/04/2021 jvmtop 1.0.3 released ###
+**Changes:**
+  * addressed warnings
+  * updated for Java 11
+
 ### 08/14/2013 jvmtop 0.8.0 released ###
 **Changes:**
   * improved attach compatibility for all IBM jvms
