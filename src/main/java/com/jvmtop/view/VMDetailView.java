@@ -21,6 +21,7 @@
 
 package com.jvmtop.view;
 
+import java.io.IOException;
 import java.lang.management.ThreadInfo;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import java.util.TreeMap;
 import com.jvmtop.monitor.VMInfo;
 import com.jvmtop.monitor.VMInfoState;
 import com.jvmtop.openjdk.tools.LocalVirtualMachine;
+import com.sun.tools.attach.AttachNotSupportedException;
 
 /**
  * "detail" view, printing detail metrics of a specific jvm.
@@ -52,8 +54,7 @@ public class VMDetailView extends AbstractConsoleView
   //TODO: refactor
   private Map<Long, Long> previousThreadCPUMillis   = new HashMap<>();
 
-  public VMDetailView(int vmid, Integer width) throws Exception
-  {
+  public VMDetailView(int vmid, Integer width) throws IOException, AttachNotSupportedException {
     super(width);
     LocalVirtualMachine localVirtualMachine = LocalVirtualMachine
         .getLocalVirtualMachine(vmid);

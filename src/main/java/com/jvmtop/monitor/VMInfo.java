@@ -341,10 +341,8 @@ public class VMInfo
 
   /**
    * calculates internal delta metrics
-   * @throws Exception
    */
-  private void updateInternal() throws Exception
-  {
+  private void updateInternal() {
     long uptime = runtimeMXBean.getUptime();
 
     long cpuTime = proxyClient.getProcessCpuTime();

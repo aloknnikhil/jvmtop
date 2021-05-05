@@ -25,9 +25,11 @@ import com.jvmtop.monitor.VMInfo;
 import com.jvmtop.monitor.VMInfoState;
 import com.jvmtop.openjdk.tools.LocalVirtualMachine;
 import com.jvmtop.profiler.*;
+import com.sun.tools.attach.AttachNotSupportedException;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 
 /**
@@ -42,7 +44,7 @@ public class VMProfileView extends AbstractConsoleView {
     private final VMInfo vmInfo_;
     private final Config config_;
 
-    public VMProfileView(int vmid, Config config) throws Exception {
+    public VMProfileView(int vmid, Config config) throws IOException, AttachNotSupportedException {
         super(config.width);
         LocalVirtualMachine localVirtualMachine = LocalVirtualMachine
                 .getLocalVirtualMachine(vmid);
@@ -73,7 +75,7 @@ public class VMProfileView extends AbstractConsoleView {
     }
 
     @Override
-    public void sleep(long millis) throws Exception {
+    public void sleep(long millis) throws InterruptedException {
         long cur = System.currentTimeMillis();
         cpuSampler_.update();
         while (cur + millis > System.currentTimeMillis()) {
@@ -84,7 +86,7 @@ public class VMProfileView extends AbstractConsoleView {
     }
 
     @Override
-    public void printView() throws Exception {
+    public void printView() throws FileNotFoundException {
         if (vmInfo_.getState() == VMInfoState.ATTACHED_UPDATE_ERROR) {
             System.out.println("ERROR: Could not fetch telemetries - Process terminated?");
             exit();
@@ -107,7 +109,7 @@ public class VMProfileView extends AbstractConsoleView {
     }
 
     @Override
-    public void last() throws Exception {
+    public void last() throws FileNotFoundException {
         renderToFile(config_.cachegrindVisualize, config_.minTotal, config_.threadlimit, cpuSampler_, new CachegrindVisualizer(), null);
         renderToFile(config_.flameVisualize, config_.minTotal, config_.threadlimit, cpuSampler_, new FlameVisualizer(), null);
     }

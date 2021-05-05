@@ -344,15 +344,14 @@ public class ProxyClient
         }
     }
 
-  public void connect() throws Exception
-  {
+  public void connect() throws IOException {
         setConnectionState(ConnectionState.CONNECTING);
         try {
             tryConnect();
             setConnectionState(ConnectionState.CONNECTED);
-        } catch (Exception e) {
+        } catch (IOException e) {
             setConnectionState(ConnectionState.DISCONNECTED);
-      throw e;
+            throw e;
         }
     }
 

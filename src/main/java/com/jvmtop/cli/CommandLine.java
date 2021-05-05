@@ -1519,7 +1519,8 @@ public class CommandLine {
                                       Stack<String> args,
                                       Collection<Field> required,
                                       Set<Field> initialized,
-                                      String[] originalArgs) throws Exception {
+                                      String[] originalArgs)
+                throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
             // arg must be one of:
             // 1. the "--" double dash separating options from positional arguments
             // 1. a stand-alone flag, like "-v" or "--verbose": no value required, must map to boolean or Boolean field
@@ -1594,7 +1595,8 @@ public class CommandLine {
             }
         }
 
-        private void processPositionalParameters(Collection<Field> required, Stack<String> args) throws Exception {
+        private void processPositionalParameters(Collection<Field> required, Stack<String> args)
+                throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
             processPositionalParameters0(required, false, args);
             if (!args.empty()) {
                 handleUnmatchedArguments(args);
@@ -1613,13 +1615,15 @@ public class CommandLine {
             return result;
         }
         private void handleUnmatchedArguments(String arg) {Stack<String> args = new Stack<>(); args.add(arg); handleUnmatchedArguments(args);}
+
         private void handleUnmatchedArguments(Stack<String> args) {
             if (!isUnmatchedArgumentsAllowed()) { throw new UnmatchedArgumentException(args); }
             while (!args.isEmpty()) { unmatchedArguments.add(args.pop()); } // addAll would give args in reverse order
             if (tracer.isWarn()) {tracer.warn("Unmatched arguments: %s%n", unmatchedArguments);}
         }
 
-        private void processPositionalParameters0(Collection<Field> required, boolean validateOnly, Stack<String> args) throws Exception {
+        private void processPositionalParameters0(Collection<Field> required, boolean validateOnly, Stack<String> args)
+                throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
             if (tracer.isDebug()) {tracer.debug("Processing positional parameters. Remainder=%s%n", reverse((Stack<?>) args.clone()));}
             int max = 0;
             for (Field positionalParam : positionalParametersFields) {
@@ -1654,7 +1658,8 @@ public class CommandLine {
                                              Set<Field> initialized,
                                              String arg,
                                              Stack<String> args,
-                                             boolean paramAttachedToKey) throws Exception {
+                                             boolean paramAttachedToKey)
+                throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
             Field field = optionName2Field.get(arg);
             required.remove(field);
             Range arity = Range.optionArity(field);
@@ -1669,7 +1674,7 @@ public class CommandLine {
                                                   Set<Field> initialized,
                                                   String arg,
                                                   Stack<String> args)
-                throws Exception {
+                throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
             String prefix = arg.substring(0, 1);
             String cluster = arg.substring(1);
             boolean paramAttachedToOption = true;
@@ -1732,7 +1737,8 @@ public class CommandLine {
                                 boolean valueAttachedToOption,
                                 Stack<String> args,
                                 Set<Field> initialized,
-                                String argDescription) throws Exception {
+                                String argDescription)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
             updateHelpRequested(field);
             if (!args.isEmpty() && args.peek().length() == 0 && !valueAttachedToOption) {
                 args.pop(); // throw out empty string we get at the end of a group of clustered short options
@@ -1757,7 +1763,7 @@ public class CommandLine {
                                                   Stack<String> args,
                                                   Class<?> cls,
                                                   Set<Field> initialized,
-                                                  String argDescription) throws Exception {
+                                                  String argDescription) throws IllegalAccessException {
             boolean noMoreValues = args.isEmpty();
             String value = args.isEmpty() ? null : trim(args.pop()); // unquote the value
             int result = arity.min; // the number or args we need to consume
@@ -1805,7 +1811,8 @@ public class CommandLine {
                                           Range arity,
                                           Stack<String> args,
                                           Class<?> cls,
-                                          String argDescription) throws Exception {
+                                          String argDescription)
+                throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
             Class<?>[] classes = getTypeAttribute(field);
             if (classes.length < 2) { throw new ParameterException("Field " + field + " needs two types (one for the map key, one for the value) but only has " + classes.length + " types configured."); }
             ITypeConverter<?> keyConverter   = getTypeConverter(classes[0], field);
@@ -1893,7 +1900,7 @@ public class CommandLine {
                                             Range arity,
                                             Stack<String> args,
                                             Class<?> cls,
-                                            String argDescription) throws Exception {
+                                            String argDescription) throws IllegalAccessException {
             Object existing = field.get(command);
             int length = existing == null ? 0 : Array.getLength(existing);
             Class<?> type = cls.getComponentType();
@@ -1922,7 +1929,8 @@ public class CommandLine {
                                                  Range arity,
                                                  Stack<String> args,
                                                  Class<?> cls,
-                                                 String argDescription) throws Exception {
+                                                 String argDescription)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
             int applied = 0;
 
             if (Collection.class.isAssignableFrom(field.getType())) {
@@ -2088,7 +2096,8 @@ public class CommandLine {
         }
 
         @SuppressWarnings("unchecked")
-        private Collection<Object> createCollection(Class<?> collectionClass) throws Exception {
+        private Collection<Object> createCollection(Class<?> collectionClass) throws NoSuchMethodException,
+                InvocationTargetException, InstantiationException, IllegalAccessException {
             if (collectionClass.isInterface()) {
                 if (List.class.isAssignableFrom(collectionClass)) {
                     return new ArrayList<>();

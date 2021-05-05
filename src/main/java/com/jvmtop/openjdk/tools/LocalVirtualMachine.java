@@ -224,8 +224,7 @@ public class LocalVirtualMachine {
         }
     }
 
-    public static LocalVirtualMachine getLocalVirtualMachine(int vmid)
-            throws Exception {
+    public static LocalVirtualMachine getLocalVirtualMachine(int vmid) throws IOException, AttachNotSupportedException {
         Map<Integer, LocalVirtualMachine> map = getAllVirtualMachines();
         LocalVirtualMachine lvm = map.get(vmid);
         if (lvm == null) {

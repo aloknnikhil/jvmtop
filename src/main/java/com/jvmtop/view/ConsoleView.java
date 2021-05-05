@@ -20,6 +20,8 @@
  */
 package com.jvmtop.view;
 
+import java.io.FileNotFoundException;
+
 /**
  *
  * Defines a console view.
@@ -34,7 +36,7 @@ public interface ConsoleView
    *
    * @throws Exception
    */
-  void printView() throws Exception;
+  void printView() throws FileNotFoundException;
 
   /**
    * Notifies that this view encountered issues
@@ -51,10 +53,10 @@ public interface ConsoleView
    * However, the view is allowed to do some work / telemetry retrieval during sleep.
    *
    */
-  void sleep(long millis) throws Exception;
+  void sleep(long millis) throws InterruptedException;
 
   /**
    * Finalizer for view - end files, flush buffers
    */
-  void last() throws Exception;
+  void last() throws FileNotFoundException;
 }

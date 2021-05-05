@@ -20,6 +20,7 @@
  */
 package com.jvmtop.view;
 
+import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.Iterator;
@@ -181,13 +182,12 @@ public abstract class AbstractConsoleView implements ConsoleView
   }
 
   @Override
-  public void sleep(long millis) throws Exception
-  {
+  public void sleep(long millis) throws InterruptedException {
     Thread.sleep(millis);
   }
 
   @Override
-  public void last() throws Exception {
+  public void last() throws FileNotFoundException {
 
   }
 }
