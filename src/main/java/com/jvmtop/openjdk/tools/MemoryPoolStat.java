@@ -32,15 +32,14 @@ package com.jvmtop.openjdk.tools;
 import java.lang.management.MemoryUsage;
 
 public class MemoryPoolStat {
-    private String      poolName;
-    private long        usageThreshold;
-    private MemoryUsage usage;
-    private long        lastGcId;
-    private long        lastGcStartTime;
-    private long        lastGcEndTime;
-    private long        collectThreshold;
-    private MemoryUsage beforeGcUsage;
-    private MemoryUsage afterGcUsage;
+    private final String      poolName;
+    private final long        usageThreshold;
+    private final MemoryUsage usage;
+    private final long        lastGcId;
+    private final long        lastGcStartTime;
+    private final long        lastGcEndTime;
+    private final long        collectThreshold;
+    private final MemoryUsage beforeGcUsage;
 
     MemoryPoolStat(String name,
                    long usageThreshold,
@@ -59,7 +58,6 @@ public class MemoryPoolStat {
         this.lastGcEndTime = lastGcEndTime;
         this.collectThreshold = collectThreshold;
         this.beforeGcUsage = beforeGcUsage;
-        this.afterGcUsage = afterGcUsage;
     }
 
     /**

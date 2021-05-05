@@ -61,9 +61,9 @@ public class Config {
     @Option(names = "--profileFlameVisualize", description = "Profiler file to output result (Flame graph format)")
     public String flameVisualize = null;
     @Option(names = "--profileThreadIds", description = "Profiler thread ids to profile (id is #123 after thread name)", split = ",", type = Long.class)
-    public List<Long> profileThreadIds = new ArrayList<Long>();
+    public List<Long> profileThreadIds = new ArrayList<>();
     @Option(names = "--profileThreadNames", description = "Profiler thread names to profile", split = ",")
-    public List<String> profileThreadNames = new ArrayList<String>();
+    public List<String> profileThreadNames = new ArrayList<>();
 
     public Config() {
     }

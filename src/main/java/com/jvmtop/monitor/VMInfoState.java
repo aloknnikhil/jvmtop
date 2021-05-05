@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  *
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.

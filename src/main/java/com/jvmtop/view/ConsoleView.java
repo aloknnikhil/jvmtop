@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  *
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -34,7 +34,7 @@ public interface ConsoleView
    *
    * @throws Exception
    */
-  public void printView() throws Exception;
+  void printView() throws Exception;
 
   /**
    * Notifies that this view encountered issues
@@ -44,17 +44,17 @@ public interface ConsoleView
    *
    * @return
    */
-  public boolean shouldExit();
+  boolean shouldExit();
 
   /**
    * Requests the view to sleep (defined as "not outputting anything").
-   * However, the view is allowed to do some work / telemtry retrieval during sleep.
+   * However, the view is allowed to do some work / telemetry retrieval during sleep.
    *
    */
-  public void sleep(long millis) throws Exception;
+  void sleep(long millis) throws Exception;
 
   /**
    * Finalizer for view - end files, flush buffers
    */
-  public void last() throws Exception;
+  void last() throws Exception;
 }

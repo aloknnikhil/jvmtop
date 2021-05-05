@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  * <p>
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -48,31 +48,21 @@ import java.util.regex.Pattern;
  *
  */
 public class CPUSampler {
-    private ThreadMXBean threadMxBean_ = null;
-
-    private ConcurrentMap<Long, CalltreeNode> data_ = new ConcurrentHashMap<Long, CalltreeNode>();
-
-    private long beginCPUTime_ = 0;
-
-    private AtomicLong totalThreadCPUTime_ = new AtomicLong(
-            0);
-
-    private ConcurrentMap<Long, Long> threadCPUPreviousMark = new ConcurrentHashMap<Long, Long>();
-
-    private AtomicLong updateCount_ = new AtomicLong(
-            0);
-
-    private VMInfo vmInfo_;
-    private Config config_;
+    private final ThreadMXBean threadMxBean_;
+    private final ConcurrentMap<Long, CalltreeNode> data_ = new ConcurrentHashMap<>();
+    private final AtomicLong totalThreadCPUTime_ = new AtomicLong(0);
+    private final ConcurrentMap<Long, Long> threadCPUPreviousMark = new ConcurrentHashMap<>();
+    private final AtomicLong updateCount_ = new AtomicLong(0);
+    private final VMInfo vmInfo_;
+    private final Config config_;
 
     /**
      * @param vmInfo
-     * @throws Exception
      */
-    public CPUSampler(VMInfo vmInfo, Config config) throws Exception {
+    public CPUSampler(VMInfo vmInfo, Config config) {
         super();
         threadMxBean_ = vmInfo.getThreadMXBean();
-        beginCPUTime_ = vmInfo.getProxyClient().getProcessCpuTime();
+        long beginCPUTime_ = vmInfo.getProxyClient().getProcessCpuTime();
         vmInfo_ = vmInfo;
         config_ = config;
         convertThreadNamesToIds(threadMxBean_, config_);
@@ -80,11 +70,11 @@ public class CPUSampler {
 
     private static void convertThreadNamesToIds(ThreadMXBean threadMxBean_, Config config_) {
         if (config_.profileThreadNames.size() == 0) return;
-        List<Pattern> regexes = new ArrayList<Pattern>(config_.profileThreadNames.size());
+        List<Pattern> regexes = new ArrayList<>(config_.profileThreadNames.size());
         for (String tn : config_.profileThreadNames) {
             regexes.add(Pattern.compile(tn));
         }
-        Set<Long> uniqIds = new HashSet<Long>(config_.profileThreadIds);
+        Set<Long> uniqIds = new HashSet<>(config_.profileThreadIds);
         ThreadInfo[] threads = threadMxBean_.dumpAllThreads(false, false);
         for (ThreadInfo thread : threads) {
             String threadName = thread.getThreadName();
@@ -94,15 +84,15 @@ public class CPUSampler {
                 }
             }
         }
-        config_.profileThreadIds = new ArrayList<Long>(uniqIds);
+        config_.profileThreadIds = new ArrayList<>(uniqIds);
     }
 
     public List<CalltreeNode> getTop(double percentLimit, int limit) {
-        List<CalltreeNode> statList = new ArrayList<CalltreeNode>();
+        List<CalltreeNode> statList = new ArrayList<>();
 
         for (Map.Entry<Long, CalltreeNode> entry : data_.entrySet()) {
-            Long cpu = entry.getValue().getTotalTime();
-            if ((cpu * 100L / (totalThreadCPUTime_.get() + 1)) > percentLimit) {
+            long cpu = entry.getValue().getTotalTime();
+            if ((cpu * 100L / (totalThreadCPUTime_.get() + 1.0)) > percentLimit) {
                 statList.add(entry.getValue());
             }
         }
@@ -115,7 +105,7 @@ public class CPUSampler {
         return totalThreadCPUTime_.get();
     }
 
-    public void update() throws Exception {
+    public void update() {
         if (vmInfo_.getState() == VMInfoState.ATTACHED_UPDATE_ERROR) {
             return; // most possible, process is already terminated
         }
@@ -134,7 +124,7 @@ public class CPUSampler {
             long threadTime = config_.profileRealTime ? System.currentTimeMillis() : threadMxBean_.getThreadCpuTime(ti.getThreadId());
             Long threadPrevTime = threadCPUPreviousMark.get(ti.getThreadId());
             if (threadPrevTime != null) {
-                Long deltaTime = (threadTime - threadPrevTime);
+                long deltaTime = (threadTime - threadPrevTime);
 
                 if (ti.getStackTrace().length > 0 && (ti.getThreadState() == State.RUNNABLE || config_.profileRealTime)) {
                     data_.putIfAbsent(ti.getThreadId(), new CalltreeNode(null, ti.getThreadName()));

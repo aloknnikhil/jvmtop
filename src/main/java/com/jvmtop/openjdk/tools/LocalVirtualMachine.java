@@ -35,6 +35,7 @@ import sun.jvmstat.monitor.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URISyntaxException;
 import java.util.*;
 
 
@@ -44,13 +45,10 @@ import java.util.*;
 public class LocalVirtualMachine {
     private String address;
 
-    private String commandLine;
-
-    private String displayName;
-
-    private int vmid;
-
-    private boolean isAttachSupported;
+    private final String commandLine;
+    private final String displayName;
+    private final int vmid;
+    private final boolean isAttachSupported;
 
     private static boolean J9Mode = false;
 
@@ -136,9 +134,9 @@ public class LocalVirtualMachine {
     // This method returns the list of all virtual machines currently
     // running on the machine
     public static Map<Integer, LocalVirtualMachine> getAllVirtualMachines() {
-        Map<Integer, LocalVirtualMachine> map = new HashMap<Integer, LocalVirtualMachine>();
-        getMonitoredVMs(map, Collections.EMPTY_MAP);
-        getAttachableVMs(map, Collections.EMPTY_MAP);
+        Map<Integer, LocalVirtualMachine> map = new HashMap<>();
+        getMonitoredVMs(map, Collections.emptyMap());
+        getAttachableVMs(map, Collections.emptyMap());
         return map;
     }
 
@@ -146,7 +144,7 @@ public class LocalVirtualMachine {
     // running on the machine but not contained in existingVmMap
     public static Map<Integer, LocalVirtualMachine> getNewVirtualMachines(
             Map<Integer, LocalVirtualMachine> existingVmMap) {
-        Map<Integer, LocalVirtualMachine> map = new HashMap<Integer, LocalVirtualMachine>(
+        Map<Integer, LocalVirtualMachine> map = new HashMap<>(
                 existingVmMap);
         getMonitoredVMs(map, existingVmMap);
         getAttachableVMs(map, existingVmMap);
@@ -160,27 +158,25 @@ public class LocalVirtualMachine {
             return;
         }
         MonitoredHost host;
-        Set vms;
+        Set<Integer> vms;
         try {
             host = MonitoredHost.getMonitoredHost(new HostIdentifier((String) null));
             vms = host.activeVms();
-        } catch (java.net.URISyntaxException sx) {
+        } catch (URISyntaxException | MonitorException sx) {
             throw new InternalError(sx.getMessage());
-        } catch (MonitorException mx) {
-            throw new InternalError(mx.getMessage());
         }
-        for (Object vmid : vms) {
+        for (Integer vmid : vms) {
             if (existingMap.containsKey(vmid)) {
                 continue;
             }
-            if (vmid instanceof Integer) {
-                int pid = ((Integer) vmid).intValue();
+            if (vmid != null) {
+                int pid = vmid;
                 String name = vmid.toString(); // default to pid if name not available
                 boolean attachable = false;
                 String address = null;
                 try {
                     MonitoredVm mvm = host.getMonitoredVm(new VmIdentifier(name));
-                    // use the command line as the display namel
+                    // use the command line as the display name
                     name = MonitoredVmUtil.commandLine(mvm);
                     attachable = MonitoredVmUtil.isAttachable(mvm);
 
@@ -189,7 +185,7 @@ public class LocalVirtualMachine {
                 } catch (Exception x) {
                     x.printStackTrace(System.err);
                 }
-                map.put((Integer) vmid, new LocalVirtualMachine(pid, name, attachable,
+                map.put(vmid, new LocalVirtualMachine(pid, name, attachable,
                         address));
             }
         }
@@ -212,16 +208,14 @@ public class LocalVirtualMachine {
                         Properties agentProps = vm.getAgentProperties();
                         address = (String) agentProps.get(LOCAL_CONNECTOR_ADDRESS_PROP);
                         vm.detach();
-                    } catch (AttachNotSupportedException x) {
+                    } catch (AttachNotSupportedException | NullPointerException x) {
                         // not attachable
                         x.printStackTrace(System.err);
-                    } catch (NullPointerException e) {
-                        e.printStackTrace(System.err);
                     } catch (IOException x) {
                         // ignore
                     }
                     map.put(vmid,
-                            new LocalVirtualMachine(vmid.intValue(), vmd.displayName(),
+                            new LocalVirtualMachine(vmid, vmd.displayName(),
                                     attachable, address));
                 }
             } catch (NumberFormatException e) {
@@ -238,18 +232,16 @@ public class LocalVirtualMachine {
             // Check if the VM is attachable but not included in the list
             // if it's running with a different security context.
             // For example, Windows services running
-            // local SYSTEM account are attachable if you have Adminstrator
+            // local SYSTEM account are attachable if you have Administrator
             // privileges.
-            boolean attachable = false;
-            String address = null;
+            String address;
             String name = String.valueOf(vmid); // default display name to pid
 
             VirtualMachine vm = VirtualMachine.attach(name);
-            attachable = true;
             Properties agentProps = vm.getAgentProperties();
             address = (String) agentProps.get(LOCAL_CONNECTOR_ADDRESS_PROP);
             vm.detach();
-            lvm = new LocalVirtualMachine(vmid, name, attachable, address);
+            lvm = new LocalVirtualMachine(vmid, name, true, address);
 
         }
         return lvm;
@@ -258,28 +250,24 @@ public class LocalVirtualMachine {
     public static LocalVirtualMachine getDelegateMachine(VirtualMachine vm)
             throws IOException {
         // privileges.
-        boolean attachable = false;
-        String address = null;
+        String address;
         String name = String.valueOf(vm.id()); // default display name to pid
 
-        attachable = true;
         Properties agentProps = vm.getAgentProperties();
         address = (String) agentProps.get(LOCAL_CONNECTOR_ADDRESS_PROP);
         vm.detach();
-        return new LocalVirtualMachine(Integer.parseInt(vm.id()), name, attachable,
+        return new LocalVirtualMachine(Integer.parseInt(vm.id()), name, true,
                 address);
     }
 
     // load the management agent into the target VM
     private void loadManagementAgent() throws IOException {
-        VirtualMachine vm = null;
+        VirtualMachine vm;
         String name = String.valueOf(vmid);
         try {
             vm = VirtualMachine.attach(name);
         } catch (AttachNotSupportedException x) {
-            IOException ioe = new IOException(x.getMessage());
-            ioe.initCause(x);
-            throw ioe;
+            throw new IOException(x.getMessage(), x);
         }
 
         if (isJava9(vm.getSystemProperties())) {
@@ -309,14 +297,8 @@ public class LocalVirtualMachine {
             agent = f.getCanonicalPath();
             try {
                 vm.loadAgent(agent, "com.sun.management.jmxremote");
-            } catch (AgentLoadException x) {
-                IOException ioe = new IOException(x.getMessage());
-                ioe.initCause(x);
-                throw ioe;
-            } catch (AgentInitializationException x) {
-                IOException ioe = new IOException(x.getMessage());
-                ioe.initCause(x);
-                throw ioe;
+            } catch (AgentLoadException | AgentInitializationException x) {
+                throw new IOException(x.getMessage(), x);
             }
         }
 

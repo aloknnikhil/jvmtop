@@ -65,7 +65,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,13 +94,10 @@ import javax.rmi.ssl.SslRMIClientSocketFactory;
 
 public class ProxyClient
 {
+    private static final Map<String, ProxyClient> cache =
+        Collections.synchronizedMap(new HashMap<>());
 
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
-
-
-    private static Map<String, ProxyClient> cache =
-        Collections.synchronizedMap(new HashMap<String, ProxyClient>());
-
     private volatile boolean isDead = true;
     private String hostName = null;
     private int port = 0;
@@ -158,7 +154,6 @@ public class ProxyClient
         if (hostName.equals("localhost") && port == 0) {
             // Monitor self
             this.hostName = hostName;
-            this.port = port;
         } else {
             // Create an RMI connector client and connect it to
             // the RMI connector server
@@ -181,7 +176,7 @@ public class ProxyClient
         setParameters(new JMXServiceURL(url), userName, password);
     }
 
-    private ProxyClient(LocalVirtualMachine lvm) throws IOException {
+    private ProxyClient(LocalVirtualMachine lvm) {
         this.lvm = lvm;
         this.connectionName = getConnectionName(lvm);
         this.displayName = "pid: " + lvm.vmid() + " " + lvm.displayName();
@@ -247,12 +242,12 @@ public class ProxyClient
         // right order.  As a workaround for now, we dynamically
         // load RMIServerImpl_Stub class instead of statically
         // referencing it.
-        Class<? extends Remote> serverStubClass = null;
+        Class<? extends Remote> serverStubClass;
         try {
             serverStubClass = Class.forName(rmiServerImplStubClassName).asSubclass(Remote.class);
         } catch (ClassNotFoundException e) {
             // should never reach here
-            throw (InternalError) new InternalError(e.getMessage()).initCause(e);
+            throw new InternalError(e.getMessage(), e);
         }
         rmiServerImplStubClass = serverStubClass;
     }
@@ -268,8 +263,7 @@ public class ProxyClient
             try {
                 stub = (RMIServer) registry.lookup("jmxrmi");
             } catch (NotBoundException nbe) {
-                throw (IOException)
-                    new IOException(nbe.getMessage()).initCause(nbe);
+                throw new IOException(nbe.getMessage(), nbe);
             }
             sslRegistry = true;
         } catch (IOException e) {
@@ -278,8 +272,7 @@ public class ProxyClient
             try {
                 stub = (RMIServer) registry.lookup("jmxrmi");
             } catch (NotBoundException nbe) {
-                throw (IOException)
-                    new IOException(nbe.getMessage()).initCause(nbe);
+                throw new IOException(nbe.getMessage(), nbe);
             }
             sslRegistry = false;
         }
@@ -368,7 +361,6 @@ public class ProxyClient
             // Monitor self
             this.jmxc = null;
             this.mbsc = ManagementFactory.getPlatformMBeanServer();
-            this.server = Snapshot.newSnapshot(mbsc);
         } else {
             // Monitor another process
             if (lvm != null) {
@@ -396,7 +388,7 @@ public class ProxyClient
                     this.jmxc = JMXConnectorFactory.connect(jmxUrl);
                 }
             } else {
-                Map<String, String[]> env = new HashMap<String, String[]>();
+                Map<String, String[]> env = new HashMap<>();
                 env.put(JMXConnector.CREDENTIALS,
                         new String[] {userName, password});
                 if (isVmConnector()) {
@@ -411,8 +403,8 @@ public class ProxyClient
                 }
             }
             this.mbsc = jmxc.getMBeanServerConnection();
-            this.server = Snapshot.newSnapshot(mbsc);
         }
+        this.server = Snapshot.newSnapshot(mbsc);
         this.isDead = false;
 
         try {
@@ -434,21 +426,9 @@ public class ProxyClient
                 on = new ObjectName(COMPILATION_MXBEAN_NAME);
                 this.hasCompilationMXBean = server.isRegistered(on);
             }
-        } catch (MalformedObjectNameException e) {
+        } catch (MalformedObjectNameException | IntrospectionException | ReflectionException | InstanceNotFoundException e) {
             // should not reach here
-            throw new InternalError(e.getMessage());
-        } catch (IntrospectionException e) {
-            InternalError ie = new InternalError(e.getMessage());
-            ie.initCause(e);
-            throw ie;
-        } catch (InstanceNotFoundException e) {
-            InternalError ie = new InternalError(e.getMessage());
-            ie.initCause(e);
-            throw ie;
-        } catch (ReflectionException e) {
-            InternalError ie = new InternalError(e.getMessage());
-            ie.initCause(e);
-            throw ie;
+            throw new InternalError(e.getMessage(), e);
         }
 
         if (hasPlatformMXBeans) {
@@ -642,23 +622,16 @@ public class ProxyClient
                 assert(false);
             }
         }
-        Set mbeans = server.queryNames(name, null);
+        Set<ObjectName> mbeans = server.queryNames(name, null);
         Map<ObjectName,MBeanInfo> result =
-            new HashMap<ObjectName,MBeanInfo>(mbeans.size());
-        Iterator iterator = mbeans.iterator();
-        while (iterator.hasNext()) {
-            Object object = iterator.next();
-            if (object instanceof ObjectName) {
-                ObjectName o = (ObjectName)object;
+                new HashMap<>(mbeans.size());
+        for (ObjectName object : mbeans) {
+            if (object != null) {
                 try {
-                    MBeanInfo info = server.getMBeanInfo(o);
-                    result.put(o, info);
-                } catch (IntrospectionException e) {
-                    // TODO: should log the error
-                } catch (InstanceNotFoundException e) {
-                    // TODO: should log the error
-                } catch (ReflectionException e) {
-                    // TODO: should log the error
+                    MBeanInfo info = server.getMBeanInfo(object);
+                    result.put(object, info);
+                } catch (IntrospectionException | InstanceNotFoundException | ReflectionException e) {
+                    throw new InternalError(e.getMessage(), e);
                 }
             }
         }
@@ -752,19 +725,17 @@ public class ProxyClient
                 // should not reach here
                 assert(false);
             }
-            Set mbeans = server.queryNames(gcName, null);
+            Set<ObjectName> mbeans = server.queryNames(gcName, null);
             if (mbeans != null) {
-                garbageCollectorMBeans = new ArrayList<GarbageCollectorMXBean>();
-                Iterator iterator = mbeans.iterator();
-                while (iterator.hasNext()) {
-                    ObjectName on = (ObjectName) iterator.next();
+                garbageCollectorMBeans = new ArrayList<>();
+                for (ObjectName on : mbeans) {
                     String name = GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE +
-                        ",name=" + on.getKeyProperty("name");
+                            ",name=" + on.getKeyProperty("name");
 
                     GarbageCollectorMXBean mBean =
-                        newPlatformMXBeanProxy(server, name,
-                                               GarbageCollectorMXBean.class);
-                        garbageCollectorMBeans.add(mBean);
+                            newPlatformMXBeanProxy(server, name,
+                                    GarbageCollectorMXBean.class);
+                    garbageCollectorMBeans.add(mBean);
                 }
             }
         }
@@ -824,24 +795,12 @@ public class ProxyClient
               java.lang.management.OperatingSystemMXBean.class);
                 }
             }
-        } catch (InstanceNotFoundException e) {
-             return null;
-        } catch (MalformedObjectNameException e) {
+        } catch (InstanceNotFoundException | MalformedObjectNameException e) {
              return null; // should never reach here
         }
-        return sunOperatingSystemMXBean;
-    }
 
-  /*
-      public synchronized HotSpotDiagnosticMXBean getHotSpotDiagnosticMXBean() throws IOException {
-          if (hasHotSpotDiagnosticMXBean && hotspotDiagnosticMXBean == null) {
-              hotspotDiagnosticMXBean =
-                  newPlatformMXBeanProxy(server, HOTSPOT_DIAGNOSTIC_MXBEAN_NAME,
-                                         HotSpotDiagnosticMXBean.class);
-          }
-          return hotspotDiagnosticMXBean;
-      }
-      */
+      return sunOperatingSystemMXBean;
+    }
 
     public <T> T getMXBean(ObjectName objName, Class<T> interfaceClass)
         throws IOException {
@@ -962,7 +921,7 @@ public class ProxyClient
         /**
          * Flush all cached values of attributes.
          */
-        public void flush();
+        void flush();
     }
 
     public static class Snapshot {
@@ -981,10 +940,10 @@ public class ProxyClient
     static class SnapshotInvocationHandler implements InvocationHandler {
 
         private final MBeanServerConnection conn;
-        private Map<ObjectName, NameValueMap> cachedValues = newMap();
-        private Map<ObjectName, Set<String>> cachedNames = newMap();
+        private final Map<ObjectName, Set<String>> cachedNames = newMap();
 
-        @SuppressWarnings("serial")
+        private Map<ObjectName, NameValueMap> cachedValues = newMap();
+
         private static final class NameValueMap
                 extends HashMap<String, Object> {}
 
@@ -999,19 +958,20 @@ public class ProxyClient
         public Object invoke(Object proxy, Method method, Object[] args)
                 throws Throwable {
             final String methodName = method.getName();
-            if (methodName.equals("getAttribute")) {
-                return getAttribute((ObjectName) args[0], (String) args[1]);
-            } else if (methodName.equals("getAttributes")) {
-                return getAttributes((ObjectName) args[0], (String[]) args[1]);
-            } else if (methodName.equals("flush")) {
-                flush();
-                return null;
-            } else {
-                try {
-                    return method.invoke(conn, args);
-                } catch (InvocationTargetException e) {
-                    throw e.getCause();
-                }
+            switch (methodName) {
+                case "getAttribute":
+                    return getAttribute((ObjectName) args[0], (String) args[1]);
+                case "getAttributes":
+                    return getAttributes((ObjectName) args[0], (String[]) args[1]);
+                case "flush":
+                    flush();
+                    return null;
+                default:
+                    try {
+                        return method.invoke(conn, args);
+                    } catch (InvocationTargetException e) {
+                        throw e.getCause();
+                    }
             }
         }
 
@@ -1035,7 +995,7 @@ public class ProxyClient
                 InstanceNotFoundException, ReflectionException, IOException {
             final NameValueMap values = getCachedAttributes(
                     objName,
-                    new TreeSet<String>(Arrays.asList(attrNames)));
+                    new TreeSet<>(Arrays.asList(attrNames)));
             final AttributeList list = new AttributeList();
             for (String attrName : attrNames) {
                 final Object value = values.get(attrName);
@@ -1053,7 +1013,7 @@ public class ProxyClient
             if (values != null && values.keySet().containsAll(attrNames)) {
                 return values;
             }
-            attrNames = new TreeSet<String>(attrNames);
+            attrNames = new TreeSet<>(attrNames);
             Set<String> oldNames = cachedNames.get(objName);
             if (oldNames != null) {
                 attrNames.addAll(oldNames);
@@ -1061,7 +1021,7 @@ public class ProxyClient
             values = new NameValueMap();
             final AttributeList attrs = conn.getAttributes(
                     objName,
-                    attrNames.toArray(new String[attrNames.size()]));
+                    attrNames.toArray(new String[0]));
             for (Attribute attr : attrs.asList()) {
                 values.put(attr.getName(), attr.getValue());
             }
@@ -1072,19 +1032,18 @@ public class ProxyClient
 
         // See http://www.artima.com/weblogs/viewpost.jsp?thread=79394
         private static <K, V> Map<K, V> newMap() {
-            return new HashMap<K, V>();
+            return new HashMap<>();
         }
     }
 
   /**
    * @return
    */
-  public long getProcessCpuTime() throws Exception
-  {
+  public long getProcessCpuTime() {
     try
     {
       String osMXBeanClassName = "com.sun.management.OperatingSystemMXBean";
-      if (lvm.isJ9Mode())
+      if (LocalVirtualMachine.isJ9Mode())
       {
         osMXBeanClassName = "com.ibm.lang.management.OperatingSystemMXBean";
       }
@@ -1098,7 +1057,7 @@ public class ProxyClient
                 Class.forName(osMXBeanClassName).getMethod("getProcessCpuTime"),
                 null);
 
-        if (lvm.isJ9Mode())
+        if (LocalVirtualMachine.isJ9Mode())
         {
           //this is very strange, J9 does return the value in "100ns units"
           //which violates the management spec

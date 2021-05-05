@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  * <p>
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -38,11 +38,9 @@ import java.io.PrintStream;
  */
 public class VMProfileView extends AbstractConsoleView {
 
-    private CPUSampler cpuSampler_;
-
-    private VMInfo vmInfo_;
-
-    private Config config_;
+    private final CPUSampler cpuSampler_;
+    private final VMInfo vmInfo_;
+    private final Config config_;
 
     public VMProfileView(int vmid, Config config) throws Exception {
         super(config.width);

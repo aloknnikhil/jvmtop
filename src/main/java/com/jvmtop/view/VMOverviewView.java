@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  *
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -21,7 +21,6 @@
 package com.jvmtop.view;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,16 +40,15 @@ import com.jvmtop.openjdk.tools.LocalVirtualMachine;
 public class VMOverviewView extends AbstractConsoleView
 {
 
-  private List<VMInfo>                      vmInfoList = new ArrayList<VMInfo>();
+  private final List<VMInfo> vmInfoList = new ArrayList<>();
 
-  private Map<Integer, LocalVirtualMachine> vmMap      = new HashMap<Integer, LocalVirtualMachine>();
+  private Map<Integer, LocalVirtualMachine> vmMap = new HashMap<>();
 
   public VMOverviewView(Integer width) {
     super(width);
   }
 
-  public void printView() throws Exception
-  {
+  public void printView() {
     printHeader();
 
     //to reduce cpu effort, scan only every 5 iterations for new vms
@@ -58,7 +56,7 @@ public class VMOverviewView extends AbstractConsoleView
 
     updateVMs(vmInfoList);
 
-    Collections.sort(vmInfoList, VMInfo.CPU_LOAD_COMPARATOR);
+    vmInfoList.sort(VMInfo.CPU_LOAD_COMPARATOR);
 
     for (VMInfo vmInfo : vmInfoList)
     {
@@ -104,14 +102,10 @@ public class VMOverviewView extends AbstractConsoleView
   }
 
   /**
-   * @param localvm
-   * @param vmid
    * @param vmInfo
    * @return
-   * @throws Exception
    */
-  private void printVM(VMInfo vmInfo) throws Exception
-  {
+  private void printVM(VMInfo vmInfo) {
 
     String deadlockState = "";
     if (vmInfo.hasDeadlockThreads())
@@ -133,21 +127,14 @@ public class VMOverviewView extends AbstractConsoleView
 
   /**
    * @param vmList
-   * @throws Exception
    */
-  private void updateVMs(List<VMInfo> vmList) throws Exception
-  {
+  private void updateVMs(List<VMInfo> vmList) {
     for (VMInfo vmInfo : vmList)
     {
       vmInfo.update();
     }
   }
 
-  /**
-   * @param vmMap
-   * @param vmMap
-   * @param set
-   */
   private void scanForNewVMs()
   {
     Map<Integer, LocalVirtualMachine> machines = LocalVirtualMachine

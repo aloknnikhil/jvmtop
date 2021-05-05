@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  * <p>
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -56,14 +56,11 @@ public class JvmTop {
     private final static String CLEAR_TERMINAL_ANSI_CMD = new String(new byte[]{
             (byte) 0x1b, (byte) 0x5b, (byte) 0x32, (byte) 0x4a, (byte) 0x1b,
             (byte) 0x5b, (byte) 0x48});
+    private final java.lang.management.OperatingSystemMXBean localOSBean_;
+    private final Config config = new Config();
 
     private static Logger logger;
-
     private Boolean supportsSystemAverage_;
-
-    private java.lang.management.OperatingSystemMXBean localOSBean_;
-
-    private Config config = new Config();
 
     public JvmTop() {
         localOSBean_ = ManagementFactory.getOperatingSystemMXBean();
@@ -159,17 +156,14 @@ public class JvmTop {
     }
 
     private static void registerShutdown(final ConsoleView view) {
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    System.out.print("Finish execution ... ");
-                    view.last();
-                    System.out.println("done!");
-                } catch (Exception e) {
-                    System.err.println("Failed to start last in shutdown");
-                    e.printStackTrace();
-                }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                System.out.print("Finish execution ... ");
+                view.last();
+                System.out.println("done!");
+            } catch (Exception e) {
+                System.err.println("Failed to start last in shutdown");
+                e.printStackTrace();
             }
         }));
     }
@@ -197,11 +191,10 @@ public class JvmTop {
         } catch (NoClassDefFoundError e) {
             e.printStackTrace(System.err);
 
-            System.err.println("");
+            System.err.println();
             System.err.println("ERROR: Some JDK classes cannot be found.");
-            System.err
-                    .println("       Please check if the JAVA_HOME environment variable has been set to a JDK path.");
-            System.err.println("");
+            System.err.println("Please check if the JAVA_HOME environment variable has been set to a JDK path.");
+            System.err.println();
         }
     }
 
@@ -225,9 +218,9 @@ public class JvmTop {
      *
      */
     private void printTopBar() {
-        String version = "";
+        StringBuilder version = new StringBuilder();
         for (String versionPart : Config.class.getAnnotation(Command.class).version()) {
-            version += versionPart;
+            version.append(versionPart);
         }
         System.out.printf(" JvmTop %s - %8tT, %6s, %2d cpus, %15.15s", version,
                 new Date(), localOSBean_.getArch(),
@@ -247,8 +240,7 @@ public class JvmTop {
     private boolean supportSystemLoadAverage() {
         if (supportsSystemAverage_ == null) {
             try {
-                supportsSystemAverage_ = (localOSBean_.getClass().getMethod(
-                        "getSystemLoadAverage") != null);
+                supportsSystemAverage_ = true;
             } catch (Throwable e) {
                 supportsSystemAverage_ = false;
             }

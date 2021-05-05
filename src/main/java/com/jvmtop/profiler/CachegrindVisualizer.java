@@ -25,13 +25,13 @@ public class CachegrindVisualizer implements Visualizer {
         StackTraceElement element = node.getStackTraceElement();
         out.println("fl=" + element.getFileName());
         out.println("fn=" + node.getName());
-        out.println(Integer.toString(element.getLineNumber()) + " " + Long.toString(node.getSelf()));
+        out.println(element.getLineNumber() + " " + node.getSelf());
 
         for (CalltreeNode child : node.getChildren()) {
             out.println("cfl=" + child.getStackTraceElement().getFileName());
             out.println("cfn=" + child.getName());
             out.println("calls=" + child.getCalls() + " " + child.getStackTraceElement().getLineNumber());
-            out.println(Integer.toString(element.getLineNumber()) + " " + child.getTotalTime());
+            out.println(element.getLineNumber() + " " + child.getTotalTime());
         }
 
         out.println();

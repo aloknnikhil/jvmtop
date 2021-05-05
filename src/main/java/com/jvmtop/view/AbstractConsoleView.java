@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  *
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -21,7 +21,6 @@
 package com.jvmtop.view;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -165,15 +164,8 @@ public abstract class AbstractConsoleView implements ConsoleView
   public Map sortByValue(Map map, boolean reverse)
   {
     List list = new LinkedList(map.entrySet());
-    Collections.sort(list, new Comparator()
-    {
-      @Override
-      public int compare(Object o1, Object o2)
-      {
-        return ((Comparable) ((Map.Entry) (o1)).getValue())
-            .compareTo(((Map.Entry) (o2)).getValue());
-      }
-    });
+    list.sort((o1, o2) -> ((Comparable) ((Map.Entry) (o1)).getValue())
+            .compareTo(((Map.Entry) (o2)).getValue()));
 
     if (reverse)
     {
@@ -181,9 +173,8 @@ public abstract class AbstractConsoleView implements ConsoleView
     }
 
     Map result = new LinkedHashMap();
-    for (Iterator it = list.iterator(); it.hasNext();)
-    {
-      Map.Entry entry = (Map.Entry) it.next();
+    for (Object o : list) {
+      Map.Entry entry = (Map.Entry) o;
       result.put(entry.getKey(), entry.getValue());
     }
     return result;

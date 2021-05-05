@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  *
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -42,18 +42,15 @@ import com.jvmtop.openjdk.tools.LocalVirtualMachine;
 public class VMDetailView extends AbstractConsoleView
 {
 
-  private VMInfo          vmInfo_;
+  private final VMInfo          vmInfo_;
 
-  private boolean         sortByTotalCPU_           = false;
-
-  private int             numberOfDisplayedThreads_ = 10;
-
-  private int             threadNameDisplayWidth_   = 30;
-
-  private boolean         displayedThreadLimit_     = true;
+  private boolean sortByTotalCPU_ = false;
+  private int numberOfDisplayedThreads_ = 10;
+  private int threadNameDisplayWidth_ = 30;
+  private boolean displayedThreadLimit_ = true;
 
   //TODO: refactor
-  private Map<Long, Long> previousThreadCPUMillis   = new HashMap<Long, Long>();
+  private Map<Long, Long> previousThreadCPUMillis   = new HashMap<>();
 
   public VMDetailView(int vmid, Integer width) throws Exception
   {
@@ -74,8 +71,7 @@ public class VMDetailView extends AbstractConsoleView
   }
 
   @Override
-  public void printView() throws Exception
-  {
+  public void printView() {
     vmInfo_.update();
 
     if (vmInfo_.getState() == VMInfoState.ATTACHED_UPDATE_ERROR)
@@ -157,10 +153,8 @@ public class VMDetailView extends AbstractConsoleView
   }
 
   /**
-   * @throws Exception
    */
-  private void printTopThreads() throws Exception
-  {
+  private void printTopThreads() {
     System.out.printf(" %6s %-" + threadNameDisplayWidth_
         + "s  %13s %8s    %8s %5s %n", "TID", "NAME", "STATE", "CPU",
         "TOTALCPU", "BLOCKEDBY");
@@ -169,14 +163,14 @@ public class VMDetailView extends AbstractConsoleView
     {
 
       //TODO: move this into VMInfo?
-      Map<Long, Long> newThreadCPUMillis = new HashMap<Long, Long>();
+      Map<Long, Long> newThreadCPUMillis = new HashMap<>();
 
-      Map<Long, Long> cpuTimeMap = new TreeMap<Long, Long>();
+      Map<Long, Long> cpuTimeMap = new TreeMap<>();
 
       for (Long tid : vmInfo_.getThreadMXBean().getAllThreadIds())
       {
         long threadCpuTime = vmInfo_.getThreadMXBean().getThreadCpuTime(tid);
-        long deltaThreadCpuTime = 0;
+        long deltaThreadCpuTime;
         if (previousThreadCPUMillis.containsKey(tid))
         {
           deltaThreadCpuTime = threadCpuTime - previousThreadCPUMillis.get(tid);

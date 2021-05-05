@@ -1,4 +1,4 @@
-/**
+/*
  * jvmtop - java monitoring for the command-line
  *
  * Copyright (C) 2013 by Patric Rufflar. All rights reserved.
@@ -27,7 +27,6 @@ import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.InvocationTargetException;
 import java.rmi.ConnectException;
 import java.util.Collection;
 import java.util.Comparator;
@@ -68,8 +67,7 @@ public class VMInfo
     @Override
     public int compare(VMInfo o1, VMInfo o2)
     {
-      return Long.valueOf(o1.getHeapUsed()).compareTo(
-          Long.valueOf(o2.getHeapUsed()));
+      return Long.compare(o1.getHeapUsed(), o2.getHeapUsed());
     }
   }
 
@@ -84,8 +82,7 @@ public class VMInfo
     @Override
     public int compare(VMInfo o1, VMInfo o2)
     {
-      return Double.valueOf(o2.getCpuLoad()).compareTo(
-          Double.valueOf(o1.getCpuLoad()));
+      return Double.compare(o2.getCpuLoad(), o1.getCpuLoad());
     }
   }
 
@@ -153,11 +150,9 @@ public class VMInfo
 
   /**
    * @param proxyClient
-   * @throws RuntimeException
    */
   public VMInfo(ProxyClient proxyClient, LocalVirtualMachine localVm,
-      String rawId) throws Exception
-  {
+      String rawId) {
     super();
     localVm_ = localVm;
     rawId_ = rawId;
@@ -201,14 +196,8 @@ public class VMInfo
    * @param localvm
    * @param vmid
    * @return
-   * @throws IllegalAccessException
-   * @throws InvocationTargetException
-   * @throws Exception
    */
-  private static VMInfo attachToVM(LocalVirtualMachine localvm, int vmid)
-      throws
-          IllegalAccessException, InvocationTargetException, Exception
-  {
+  private static VMInfo attachToVM(LocalVirtualMachine localvm, int vmid) {
     //VirtualMachine vm = VirtualMachine.attach("" + vmid);
     try
     {
@@ -297,10 +286,8 @@ public class VMInfo
   /**
    * Updates all jvm metrics to the most recent remote values
    *
-   * @throws Exception
    */
-  public void update() throws Exception
-  {
+  public void update() {
     if (state_ == VMInfoState.ERROR_DURING_ATTACH
         || state_ == VMInfoState.DETACHED
         || state_ == VMInfoState.CONNECTION_REFUSED)

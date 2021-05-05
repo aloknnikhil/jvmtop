@@ -55,11 +55,11 @@ public class TreeVisualizer implements Visualizer {
         boolean skipping = config.canSkip && node.getTotalTime() == parentTotalTime && children.size() == 1 && node.getSelf() == 0 && depth > 0;
         if (skipping) {
             if (!skipped) {
-                out.print(padding.toString());
+                out.print(padding);
                 out.println("[...skipping...]");
             }
         } else {
-            out.print(padding.toString());
+            out.print(padding);
             out.printf("%." + functionMaxWidth + "s (%.1f%% | %.1f%% self)",
                     node.getName(), percentFull, percentSelf/*, node.getIntermediate(), node.getSelf()*/);
             if (config.printTotal) {

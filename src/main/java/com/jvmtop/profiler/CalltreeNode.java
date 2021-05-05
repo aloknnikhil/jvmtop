@@ -13,11 +13,11 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CalltreeNode implements Comparable<CalltreeNode> {
     private final StackTraceElement stackTraceElement;
     private transient final String name;
-    private AtomicLong intermediate = new AtomicLong(0);
-    private AtomicLong self = new AtomicLong(0);
-    private AtomicInteger calls = new AtomicInteger(0);
+    private final AtomicLong intermediate = new AtomicLong(0);
+    private final AtomicLong self = new AtomicLong(0);
+    private final AtomicInteger calls = new AtomicInteger(0);
 
-    private final ConcurrentMap<StackTraceElement, CalltreeNode> children = new ConcurrentHashMap<StackTraceElement, CalltreeNode>();
+    private final ConcurrentMap<StackTraceElement, CalltreeNode> children = new ConcurrentHashMap<>();
 
     public CalltreeNode(StackTraceElement stackTraceElement) {
         this(stackTraceElement, stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName());
@@ -40,11 +40,10 @@ public class CalltreeNode implements Comparable<CalltreeNode> {
         return node;
     }
 
-    private CalltreeNode addSelf(StackTraceElement element, Long time) {
+    private void addSelf(StackTraceElement element, Long time) {
         CalltreeNode node = getNode(element);
         node.self.addAndGet(time);
         node.call();
-        return node;
     }
 
     private void call() {
@@ -80,7 +79,7 @@ public class CalltreeNode implements Comparable<CalltreeNode> {
     }
 
     public List<CalltreeNode> getSortedChildren(double minCost, long totalCost) {
-        List<CalltreeNode> result = new ArrayList<CalltreeNode>();
+        List<CalltreeNode> result = new ArrayList<>();
         for (CalltreeNode node : children.values()) {
             if (node.getTotalTime() * 100.0 / totalCost > minCost)
                 result.add(node);
@@ -117,7 +116,7 @@ public class CalltreeNode implements Comparable<CalltreeNode> {
     }
 
     private static int compare(long x, long y) { // copy-paste from Long from 1.7
-        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+        return Long.compare(x, y);
     }
 
     @Override

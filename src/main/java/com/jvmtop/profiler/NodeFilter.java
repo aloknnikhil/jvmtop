@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 class NodeFilter {
-    private static List<String> filter = Arrays
+    private static final List<String> filter = Arrays
             .asList(
                     "org.eclipse.",
                     "org.apache.",
