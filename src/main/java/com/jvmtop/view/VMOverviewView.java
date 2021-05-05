@@ -20,16 +20,16 @@
  */
 package com.jvmtop.view;
 
+import com.jvmtop.monitor.VMInfo;
+import com.jvmtop.monitor.VMInfoState;
+import com.jvmtop.openjdk.tools.LocalVirtualMachine;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import com.jvmtop.monitor.VMInfo;
-import com.jvmtop.monitor.VMInfoState;
-import com.jvmtop.openjdk.tools.LocalVirtualMachine;
 
 /**
  * "overview" view, providing the most-important metrics of all accessible jvms in a top-like manner.

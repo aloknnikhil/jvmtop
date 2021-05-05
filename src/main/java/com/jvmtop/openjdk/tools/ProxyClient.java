@@ -30,12 +30,28 @@
 package com.jvmtop.openjdk.tools;
 
 
-
 import sun.rmi.server.UnicastRef2;
 import sun.rmi.transport.LiveRef;
 
-import static java.lang.management.ManagementFactory.*;
-
+import javax.management.Attribute;
+import javax.management.AttributeList;
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.IntrospectionException;
+import javax.management.InvalidAttributeValueException;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.rmi.RMIConnector;
+import javax.management.remote.rmi.RMIServer;
+import javax.rmi.ssl.SslRMIClientSocketFactory;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -70,25 +86,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.management.Attribute;
-import javax.management.AttributeList;
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
-import javax.management.InvalidAttributeValueException;
-import javax.management.MBeanException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanOperationInfo;
-import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-import javax.management.ReflectionException;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-import javax.management.remote.rmi.RMIConnector;
-import javax.management.remote.rmi.RMIServer;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
+import static java.lang.management.ManagementFactory.CLASS_LOADING_MXBEAN_NAME;
+import static java.lang.management.ManagementFactory.COMPILATION_MXBEAN_NAME;
+import static java.lang.management.ManagementFactory.GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE;
+import static java.lang.management.ManagementFactory.MEMORY_MXBEAN_NAME;
+import static java.lang.management.ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME;
+import static java.lang.management.ManagementFactory.RUNTIME_MXBEAN_NAME;
+import static java.lang.management.ManagementFactory.THREAD_MXBEAN_NAME;
+import static java.lang.management.ManagementFactory.newPlatformMXBeanProxy;
 
 
 

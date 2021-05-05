@@ -24,7 +24,13 @@ import com.jvmtop.Config;
 import com.jvmtop.monitor.VMInfo;
 import com.jvmtop.monitor.VMInfoState;
 import com.jvmtop.openjdk.tools.LocalVirtualMachine;
-import com.jvmtop.profiler.*;
+import com.jvmtop.profiler.CPUSampler;
+import com.jvmtop.profiler.CachegrindVisualizer;
+import com.jvmtop.profiler.CalltreeNode;
+import com.jvmtop.profiler.FlameVisualizer;
+import com.jvmtop.profiler.JsonVisualizer;
+import com.jvmtop.profiler.TreeVisualizer;
+import com.jvmtop.profiler.Visualizer;
 import com.sun.tools.attach.AttachNotSupportedException;
 
 import java.io.FileNotFoundException;

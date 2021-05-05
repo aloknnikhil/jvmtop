@@ -15,7 +15,11 @@
  */
 package com.jvmtop.cli;
 
-import java.awt.Point;
+import com.jvmtop.cli.CommandLine.Help.Ansi.IStyle;
+import com.jvmtop.cli.CommandLine.Help.Ansi.Style;
+import com.jvmtop.cli.CommandLine.Help.Ansi.Text;
+
+import java.awt.*;
 import java.io.File;
 import java.io.PrintStream;
 import java.lang.annotation.ElementType;
@@ -59,14 +63,10 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
-import com.jvmtop.cli.CommandLine.Help.Ansi.IStyle;
-import com.jvmtop.cli.CommandLine.Help.Ansi.Style;
-import com.jvmtop.cli.CommandLine.Help.Ansi.Text;
-
-import static java.util.Locale.ENGLISH;
 import static com.jvmtop.cli.CommandLine.Help.Column.Overflow.SPAN;
 import static com.jvmtop.cli.CommandLine.Help.Column.Overflow.TRUNCATE;
 import static com.jvmtop.cli.CommandLine.Help.Column.Overflow.WRAP;
+import static java.util.Locale.ENGLISH;
 
 /**
  * <p>

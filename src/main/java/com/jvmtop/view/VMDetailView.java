@@ -21,6 +21,11 @@
 
 package com.jvmtop.view;
 
+import com.jvmtop.monitor.VMInfo;
+import com.jvmtop.monitor.VMInfoState;
+import com.jvmtop.openjdk.tools.LocalVirtualMachine;
+import com.sun.tools.attach.AttachNotSupportedException;
+
 import java.io.IOException;
 import java.lang.management.ThreadInfo;
 import java.util.Arrays;
@@ -28,11 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import com.jvmtop.monitor.VMInfo;
-import com.jvmtop.monitor.VMInfoState;
-import com.jvmtop.openjdk.tools.LocalVirtualMachine;
-import com.sun.tools.attach.AttachNotSupportedException;
 
 /**
  * "detail" view, printing detail metrics of a specific jvm.

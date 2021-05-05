@@ -23,7 +23,6 @@ package com.jvmtop.view;
 import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.Formatter;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
