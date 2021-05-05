@@ -25,6 +25,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -1530,7 +1531,7 @@ public class CommandLine {
 
             while (!args.isEmpty()) {
                 String arg = args.pop();
-                if (tracer.isDebug()) {tracer.debug("Processing argument '%s'. Remainder=%s%n", arg, reverse((Stack<String>) args.clone()));}
+                if (tracer.isDebug()) {tracer.debug("Processing argument '%s'. Remainder=%s%n", arg, reverse((Stack<?>) args.clone()));}
 
                 // Double-dash separates options from positional arguments.
                 // If found, then interpret the remaining args as positional parameters.
@@ -1619,7 +1620,7 @@ public class CommandLine {
         }
 
         private void processPositionalParameters0(Collection<Field> required, boolean validateOnly, Stack<String> args) throws Exception {
-            if (tracer.isDebug()) {tracer.debug("Processing positional parameters. Remainder=%s%n", reverse((Stack<String>) args.clone()));}
+            if (tracer.isDebug()) {tracer.debug("Processing positional parameters. Remainder=%s%n", reverse((Stack<?>) args.clone()));}
             int max = 0;
             for (Field positionalParam : positionalParametersFields) {
                 Range indexRange = Range.parameterIndex(positionalParam);
@@ -1633,7 +1634,7 @@ public class CommandLine {
                 Collections.reverse(argsCopy);
                 for (int i = 0; i < indexRange.min && !argsCopy.isEmpty(); i++) { argsCopy.pop(); }
                 Range arity = Range.parameterArity(positionalParam);
-                if (tracer.isDebug()) {tracer.debug("Trying to assign args at index %s %s to %s, arity=%s%n", indexRange, reverse((Stack<String>) argsCopy.clone()), positionalParam, arity);}
+                if (tracer.isDebug()) {tracer.debug("Trying to assign args at index %s %s to %s, arity=%s%n", indexRange, reverse((Stack<?>) argsCopy.clone()), positionalParam, arity);}
                 assertNoMissingParameters(positionalParam, arity.min, argsCopy);
                 if (!validateOnly) {
                     int originalSize = argsCopy.size();
@@ -1809,14 +1810,19 @@ public class CommandLine {
             if (classes.length < 2) { throw new ParameterException("Field " + field + " needs two types (one for the map key, one for the value) but only has " + classes.length + " types configured."); }
             ITypeConverter<?> keyConverter   = getTypeConverter(classes[0], field);
             ITypeConverter<?> valueConverter = getTypeConverter(classes[1], field);
-            Map<Object, Object> result = (Map<Object, Object>) field.get(command);
-            if (result == null) {
-                result = createMap(cls);
-                field.set(command, result);
+            int applied = 0;
+            if (Map.class.isAssignableFrom(field.getType())) {
+                @SuppressWarnings("unchecked")
+                Map<Object, Object> result = (Map<Object, Object>) field.get(command);
+                if (result == null) {
+                    result = createMap(cls);
+                    field.set(command, result);
+                }
+                int originalSize = result.size();
+                consumeMapArguments(field, arity, args, classes, keyConverter, valueConverter, result, argDescription);
+                applied = result.size() - originalSize;
             }
-            int originalSize = result.size();
-            consumeMapArguments(field, arity, args, classes, keyConverter, valueConverter, result, argDescription);
-            return result.size() - originalSize;
+            return applied;
         }
 
         private void consumeMapArguments(Field field,
@@ -1911,29 +1917,34 @@ public class CommandLine {
             return converted.size(); // return how many args were consumed
         }
 
-        @SuppressWarnings("unchecked")
         private int applyValuesToCollectionField(Field field,
                                                  Class<?> annotation,
                                                  Range arity,
                                                  Stack<String> args,
                                                  Class<?> cls,
                                                  String argDescription) throws Exception {
-            Collection<Object> collection = (Collection<Object>) field.get(command);
-            Class<?> type = getTypeAttribute(field)[0];
-            int length = collection == null ? 0 : collection.size();
-            List<Object> converted = consumeArguments(field, annotation, arity, args, type, length, argDescription);
-            if (collection == null) {
-                collection = createCollection(cls);
-                field.set(command, collection);
-            }
-            for (Object element : converted) {
-                if (element instanceof Collection<?>) {
-                    collection.addAll((Collection<?>) element);
-                } else {
-                    collection.add(element);
+            int applied = 0;
+
+            if (Collection.class.isAssignableFrom(field.getType())) {
+                @SuppressWarnings("unchecked")
+                Collection<Object> collection = (Collection<Object>) field.get(command);
+                Class<?> type = getTypeAttribute(field)[0];
+                int length = collection == null ? 0 : collection.size();
+                List<Object> converted = consumeArguments(field, annotation, arity, args, type, length, argDescription);
+                if (collection == null) {
+                    collection = createCollection(cls);
+                    field.set(command, collection);
                 }
+                for (Object element : converted) {
+                    if (element instanceof Collection<?>) {
+                        collection.addAll((Collection<?>) element);
+                    } else {
+                        collection.add(element);
+                    }
+                }
+                applied = converted.size();
             }
-            return converted.size();
+            return applied;
         }
 
         private List<Object> consumeArguments(Field field,
@@ -2075,6 +2086,7 @@ public class CommandLine {
             if (value) { if (tracer.isInfo()) {tracer.info("Field '%s.%s' has '%s' annotation: not validating required fields%n", f.getDeclaringClass().getSimpleName(), f.getName(), description); }}
             return value;
         }
+
         @SuppressWarnings("unchecked")
         private Collection<Object> createCollection(Class<?> collectionClass) throws Exception {
             if (collectionClass.isInterface()) {
@@ -2089,14 +2101,22 @@ public class CommandLine {
                 }
                 return new ArrayList<>();
             }
+
             // custom Collection implementation class must have default constructor
-            return (Collection<Object>) collectionClass.newInstance();
+            return (Collection<Object>) collectionClass.getDeclaredConstructor().newInstance();
         }
-        private Map<Object, Object> createMap(Class<?> mapClass) {
-            try { // if it is an implementation class, instantiate it
-                return (Map<Object, Object>) mapClass.newInstance();
-            } catch (Exception ignored) {}
-            return new LinkedHashMap<>();
+
+        @SuppressWarnings("unchecked")
+        private Map<Object, Object> createMap(Class<?> mapClass) throws NoSuchMethodException,
+                InvocationTargetException, InstantiationException, IllegalAccessException {
+            if (mapClass.isInterface()) {
+                if (Map.class.isAssignableFrom(mapClass)) {
+                    return new LinkedHashMap<>();
+                }
+            }
+
+            // Custom map implementation class must have a default constructor
+            return (Map<Object, Object>) mapClass.getDeclaredConstructor().newInstance();
         }
         private ITypeConverter<?> getTypeConverter(final Class<?> type, Field field) {
             ITypeConverter<?> result = converterRegistry.get(type);
